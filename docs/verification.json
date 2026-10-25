@@ -1,0 +1,151 @@
+{
+  "investigated_on": "2026-10-25",
+  "disassembly_commit": "09b1bd81a788de8ceec664a34094e84ddb463117",
+  "prior_hack_commit": "4e05a875b7b3232effca9a858938d9c7ac080d2b",
+  "rom": {
+    "original_bytes": 393232,
+    "rebuilt_bytes": 393232,
+    "original_sha256": "4377a7f5e6eb50bdd2ac6f249bf1a7085500aca8eb41f38545c3a2731c51a579",
+    "rebuilt_sha256": "4377a7f5e6eb50bdd2ac6f249bf1a7085500aca8eb41f38545c3a2731c51a579",
+    "expected_revision": true,
+    "byte_identical": true,
+    "payload_identical": true,
+    "mapper": 4,
+    "prg_bytes": 262144,
+    "chr_bytes": 131072
+  },
+  "runtime": {
+    "emulator": "jsnes 2.1.0",
+    "rom_sha256": "4377a7f5e6eb50bdd2ac6f249bf1a7085500aca8eb41f38545c3a2731c51a579",
+    "scope": "Headless single-player World 1-1 control experiment; no browser/mobile performance or co-op validation.",
+    "checks": {
+      "enters_world_1_1_without_ram_writes": true,
+      "snapshot_replay_repeatable_for_30_frames": true,
+      "second_controller_is_read": true,
+      "second_controller_does_not_spawn_player_in_this_scene": true,
+      "first_controller_moves_and_jumps": true
+    },
+    "initial": {
+      "x": 24,
+      "y": 384,
+      "xVelocity": 0,
+      "yVelocity": 0,
+      "currentPlayer": 0,
+      "tileset": 1,
+      "objectStates": [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      "objectIds": [
+        0,
+        0,
+        0,
+        0,
+        114,
+        0,
+        0,
+        0
+      ]
+    },
+    "idle": {
+      "x": 24,
+      "y": 384,
+      "xVelocity": 0,
+      "yVelocity": 0,
+      "currentPlayer": 0,
+      "tileset": 1,
+      "objectStates": [
+        0,
+        0,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      "objectIds": [
+        0,
+        0,
+        0,
+        0,
+        114,
+        0,
+        0,
+        0
+      ]
+    },
+    "secondPort": {
+      "scene": {
+        "x": 24,
+        "y": 384,
+        "xVelocity": 0,
+        "yVelocity": 0,
+        "currentPlayer": 0,
+        "tileset": 1,
+        "objectStates": [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0
+        ],
+        "objectIds": [
+          0,
+          0,
+          0,
+          0,
+          114,
+          0,
+          0,
+          0
+        ]
+      },
+      "input1": 0,
+      "input2": 129,
+      "ramHash": "7211c094d38c8de88720258471f4895172743ce36b3f435e74850daa3f9f49bc"
+    },
+    "firstPort": {
+      "scene": {
+        "x": 47,
+        "y": 313,
+        "xVelocity": 24,
+        "yVelocity": 254,
+        "currentPlayer": 0,
+        "tileset": 1,
+        "objectStates": [
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0
+        ],
+        "objectIds": [
+          0,
+          0,
+          0,
+          0,
+          114,
+          0,
+          0,
+          0
+        ]
+      },
+      "input1": 129,
+      "input2": 0,
+      "ramHash": "490a67f50501842e16e7f9f9e22d2cd1a2dc53348b7da85615fdc12055e47d54"
+    }
+  }
+}

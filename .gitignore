@@ -1,0 +1,9 @@
+.research/
+.npm-cache/
+node_modules/
+artifacts/
+__pycache__/
+*.nes
+*.zip
+*.fns
+*.lst

@@ -1,0 +1,14 @@
+{
+  "name": "mario3-coop-research",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Original-ROM SMB3 co-op feasibility experiments; not a playable co-op release",
+  "scripts": {
+    "probe": "node scripts/probe-runtime.mjs",
+    "verify:rom": "python scripts/verify-rom.py"
+  },
+  "devDependencies": {
+    "jsnes": "2.1.0"
+  }
+}
