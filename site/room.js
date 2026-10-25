@@ -1,11 +1,14 @@
 import { PROTOCOL, newRoomCode, validInput } from './protocol.js';
 const PREFIX = 'mario3-together-v1-';
+const networkAdvice = () => /Android/i.test(globalThis.navigator?.userAgent || '')
+  ? 'In Android Settings > Apps > your browser > Permissions, allow Nearby devices / Local network, then retry. See Help for other connection options.'
+  : 'Check local-network permissions and Wi-Fi isolation, or configure a TURN relay in Help.';
 const messageFor = error => ({
   'peer-unavailable':'That room is not available. Check the code and ask the host to keep the game open.',
   'network':'The room service is unreachable. Check your connection and try again.',
   'server-error':'The room service is unavailable. Try again or set your own PeerServer in Help.',
   'unavailable-id':'That room code is already in use. Create another room.',
-  'webrtc':'The direct connection failed. Try the same Wi-Fi or configure a TURN relay in Help.',
+  'webrtc':`The direct connection failed. ${networkAdvice()}`,
   'browser-incompatible':'This browser does not support the connection. Use a current Safari or Chrome browser.',
 }[error?.type] || error?.message || 'The room connection failed. Please try again.');
 
@@ -134,7 +137,7 @@ export class Room {
     connection.on('error', error => { if (this.connection === connection) { connection.close(); this.emit('error',messageFor(error)); } });
   }
   connectionFailure(connection) {
-    if(connection.peerConnection?.remoteDescription) return 'Room found, but the devices could not establish a direct connection. A firewall or Wi-Fi isolation may be blocking it. Try a different network, or configure a TURN relay in Help.';
+    if(connection.peerConnection?.remoteDescription) return `Room found, but the devices could not establish a direct connection. ${networkAdvice()}`;
     return 'The room did not answer. Ask the host to keep the game tab visible, reload it, and share the new room code.';
   }
   failPending(text) {

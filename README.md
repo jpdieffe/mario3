@@ -21,6 +21,14 @@ on the host device, load, regroup, and leave. The host must keep the tab visible
 Keyboard: arrows move, Z or Space jumps, X runs/holds, Enter starts/pauses, Shift
 selects. Touch controls and standard gamepads are supported.
 
+If a phone finds the room but cannot connect on the same Wi-Fi, check its browser's
+system permissions. On Android 17 or newer, open **Settings > Apps > Chrome (or
+your browser) > Permissions** and allow **Nearby devices / Local network**. Then
+reopen the game and join again. A browser's site-level permission is separate from
+this Android permission. Android can block local traffic while ordinary internet
+access continues to work; see [Android's local network permission documentation](https://developer.android.com/privacy-and-security/local-network-permission).
+Networks that block direct connections may still require a TURN relay in Help.
+
 ## Implementation and limits
 
 The supplied ROM is preserved in full. A runtime patch coordinates two original
@@ -41,9 +49,13 @@ regroup can recover some cases. The two players share room transitions, so they
 cannot stay in different pipe subrooms simultaneously. Save before difficult
 stages. This is not a standalone hardware-compatible NES patch.
 
-Desktop Chrome and two connected Chrome clients using phone-sized/touch contexts
-were tested. Physical Android devices and iOS Safari have not been tested in this
-environment. A slower host may reduce game speed because it runs both contexts.
+Desktop Chrome and a physical Pixel 9 running Android 17 / Chrome 155 were tested
+over Wi-Fi, with both devices taking turns hosting. After granting Chrome's Android
+local-network permission, joining, live video, the audio track, remote jumping and
+button release passed in both directions. The Pixel received about 31 video frames
+per second and delivered about 29 when hosting in the measured samples. USB was
+used for debugging only; gameplay used the Wi-Fi peer connection. iOS Safari has
+not been tested here. A slower host may reduce game speed because it runs both contexts.
 
 ## Development
 
