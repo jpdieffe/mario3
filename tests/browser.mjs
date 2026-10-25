@@ -69,9 +69,13 @@ try{
   const third=await browser.newPage();await third.goto(`http://127.0.0.1:4178/#room=${code}`);await third.locator('#join-button').click();
   await third.waitForFunction(()=>document.querySelector('#status').textContent.includes('already has two'),{},{timeout:20000});await third.close();
   console.log('PASS: third player rejected');
-  await guest.close();await host.waitForFunction(()=>!window.__mario.engine.joined,{},{timeout:18000});
-  const rejoin=await guestContext.newPage();await rejoin.goto(`http://127.0.0.1:4178/?test=1#room=${code}`);await rejoin.locator('#join-button').tap();
-  await rejoin.waitForFunction(()=>document.querySelector('#remote-video').videoWidth>0,{},{timeout:30000});
-  console.log('PASS: disconnect and drop-in rejoin');
+  await host.evaluate(()=>window.__mario.room.connection.close());
+  await host.waitForFunction(()=>!window.__mario.engine.joined,{},{timeout:18000});
+  await guest.locator('#retry-button').waitFor({state:'visible',timeout:18000});
+  await guest.locator('#retry-button').tap();
+  await guest.waitForFunction(()=>window.__mario.room?.accepted && document.querySelector('#remote-video').videoWidth>0,{},{timeout:30000});
+  assert.equal(await guest.locator('#room-label').textContent(),code);
+  assert.equal(await guest.locator('#retry-button').isVisible(),false);
+  console.log('PASS: disconnect and one-tap retry into the same room');
   assert.deepEqual(errors,[]);
 }finally{await browser.close();server.close();}

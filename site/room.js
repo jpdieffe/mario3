@@ -34,7 +34,12 @@ export class Room {
       }
     }
     if (this.closed) return;
-    this.peer.on('error', error => this.emit('error', messageFor(error)));
+    this.peer.on('error', error => {
+      // A missing/offline room is terminal for this attempt. Do not replace its
+      // useful error with a generic ICE timeout later.
+      if(error.type==='peer-unavailable' && !this.accepted)this.failPending(messageFor(error));
+      else this.emit('error', messageFor(error));
+    });
     this.peer.on('connection', connection => {
       if (!this.isHost || this.connection) { connection.on('open', () => { connection.send({type:'busy'}); setTimeout(() => connection.close(), 100); }); return; }
       this.attach(connection);
@@ -42,7 +47,7 @@ export class Room {
     this.peer.on('call', call => {
       if (this.isHost || call.peer !== PREFIX + this.code || !this.connection?.open || call.metadata?.protocol !== PROTOCOL) { call.close(); return; }
       this.call?.close(); this.call = call;
-      call.on('stream', stream => { clearTimeout(this.mediaTimeout); this.emit('stream', stream); });
+      call.on('stream', stream => { this.mediaReceived=true; clearTimeout(this.mediaTimeout); this.emit('stream', stream); });
       call.on('error', error => this.emit('error', messageFor(error)));
       call.on('close', () => { if (!this.closed && this.call === call) this.emit('mediaClosed'); });
       call.answer();
@@ -78,12 +83,18 @@ export class Room {
     });
   }
   attach(connection) {
-    this.connection = connection; this.accepted = false; this.lastSeq = -1;
+    this.connection = connection; this.accepted = false; this.lastSeq = -1;this.mediaReceived=false;this.lastHeard=0;
     this.connectTimeout = setTimeout(() => {
       if (this.connection === connection && !this.accepted) {
-        connection.close(); this.emit('error','Could not connect to the other player. Try the same Wi-Fi or add a TURN relay in Help.');
+        this.failPending(this.connectionFailure(connection));
       }
-    }, 20000);
+    }, 30000);
+    const pc=connection.peerConnection;
+    pc?.addEventListener('iceconnectionstatechange',()=>{
+      if(this.connection!==connection || this.closed)return;
+      if(pc.iceConnectionState==='checking')this.emit('status','Room found. Connecting the two devices…');
+      if(pc.iceConnectionState==='failed'&&!this.accepted)this.failPending(this.connectionFailure(connection));
+    });
     connection.on('open', () => {
       if (this.closed) { connection.close(); return; }
       if (!this.isHost) this.send({type:'hello',protocol:PROTOCOL});
@@ -100,7 +111,7 @@ export class Room {
       if (data.type === 'welcome' && !this.isHost && !this.accepted && data.protocol === PROTOCOL) {
         this.accepted = true; clearTimeout(this.connectTimeout);
         this.emit('connected');
-        this.mediaTimeout = setTimeout(() => this.emit('error','Connected, but the game stream has not arrived. Ask the host to keep the game visible, or try a different network.'), 90000);
+        if(!this.mediaReceived)this.mediaTimeout = setTimeout(() => this.emit('error','Connected, but the game stream has not arrived. Ask the host to keep the game visible, or try a different network.'), 30000);
         return;
       }
       if (!this.accepted) return;
@@ -121,6 +132,15 @@ export class Room {
       if (!this.closed && wasAccepted) this.emit('disconnected');
     });
     connection.on('error', error => { if (this.connection === connection) { connection.close(); this.emit('error',messageFor(error)); } });
+  }
+  connectionFailure(connection) {
+    if(connection.peerConnection?.remoteDescription) return 'Room found, but the devices could not establish a direct connection. A firewall or Wi-Fi isolation may be blocking it. Try a different network, or configure a TURN relay in Help.';
+    return 'The room did not answer. Ask the host to keep the game tab visible, reload it, and share the new room code.';
+  }
+  failPending(text) {
+    clearTimeout(this.connectTimeout);clearTimeout(this.mediaTimeout);
+    if(!this.accepted){const connection=this.connection;this.connection=null;connection?.close();}
+    this.emit('error',text);
   }
   send(data) { if (this.connection?.open) { try { this.connection.send(data); } catch {} } }
   setInput(mask) { this.mask = mask; if (this.accepted && !this.isHost) this.send({type:'input',mask,seq:this.seq++}); }

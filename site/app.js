@@ -22,6 +22,7 @@ function showGame(host){
   $('game').hidden=!host;$('remote-video').hidden=host;
   $('player-label').textContent=host?'MARIO':'LUIGI';$('partner-label').textContent=host?'Waiting for Luigi':'Connecting to Mario';
   $('save-button').disabled=!host;$('load-button').disabled=!host;
+  $('retry-button').hidden=true;
   controls.enable(true);message(host?'Loading the original game…':'Connecting to your friend…');
   navigator.wakeLock?.request('screen').then(lock=>wakeLock=lock).catch(()=>{});
 }
@@ -64,16 +65,16 @@ function makeRoom(){
     },
     input(mask){engine?.input(1,mask);},
     regroup,
-    status(text){status(text);},
+    status(text){status(text);if(role==='guest'&&!$('remote-video').videoWidth)message(text);},
     latency(ms){$('connection-label').textContent=`P2P · ${Math.round(ms)} MS`;},
-    error(text){status(text,true);if(role==='guest'&&!$('remote-video').videoWidth)message(text);},
+    error(text){status(text,true);if(role==='guest'){$('retry-button').hidden=false;if(!$('remote-video').videoWidth)message(text);}},
     disconnected(){
       $('partner-label').textContent=role==='host'?'Waiting for Luigi':'Host disconnected';
       $('connection-label').textContent='DISCONNECTED';
       if(role==='host'){engine.leave();status('Luigi left. They can rejoin with the same code.');}
-      else {controls.enable(false);message('The host disconnected. Leave this room to join again.');}
+      else {controls.enable(false);$('retry-button').hidden=false;message('The host disconnected. Tap Retry to reconnect.');}
     },
-    mediaClosed(){if(role==='guest'&&room?.accepted)message('Video disconnected. Leave this room and rejoin.');},
+    mediaClosed(){if(role==='guest'&&room?.accepted){$('retry-button').hidden=false;message('Video disconnected. Tap Retry to reconnect.');}},
   },settings());
 }
 async function host(){
@@ -103,7 +104,7 @@ async function join(event){
   if(!code){status('Enter the two-character room code, such as AB.');$('room-input').focus();return;}
   busy=true;showGame(false);$('room-label').textContent=code;
   try{room=makeRoom();await room.open(false,code);location.hash=`room=${code}`;}
-  catch(error){status(error.message,true);message(error.message);}
+  catch(error){status(error.message,true);message(error.message);$('retry-button').hidden=false;}
   finally{busy=false;}
 }
 function leave(clearStatus=true){
@@ -117,6 +118,7 @@ function leave(clearStatus=true){
 }
 $('host-button').addEventListener('click',host);
 $('join-form').addEventListener('submit',join);
+$('retry-button').addEventListener('click',()=>{const code=room?.code;leave(false);if(code){$('room-input').value=code;join();}});
 $('leave-button').addEventListener('click',()=>leave());
 $('copy-room').addEventListener('click',async()=>{
   if(!room?.code)return;
