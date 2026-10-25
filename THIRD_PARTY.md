@@ -6,7 +6,8 @@
   commit `09b1bd81a788de8ceec664a34094e84ddb463117`.
   Original project: http://www.sonicepoch.com/sm3mix/ .
   Used to verify the exact ROM revision, identify gameplay memory, and understand
-  scrolling, object state and transitions. Research checkouts are not published.
+  scrolling, object state, tile collision, weapon hit flags and transitions.
+  Research checkouts are not published.
 - **JSNES 2.1.0**: https://github.com/bfirsh/jsnes, Apache-2.0.
   Source is vendored in `site/vendor/jsnes/`; license in `site/vendor/jsnes-LICENSE`.
   Local changes in `ppu/index.js`: correct the odd-bank 8x16 sprite base index;

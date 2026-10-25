@@ -57,6 +57,31 @@ try{
   assert.ok(peak>.001,`Expected game audio, received peak ${peak}`);console.log('PASS: game audio starts after a host tap',peak);
   await host.screenshot({path:'test-results/phone-host.png'});await guest.screenshot({path:'test-results/phone-guest.png'});
   for(const page of[host,guest])assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth && document.documentElement.scrollHeight<=innerHeight),'Landscape game must fit without scrolling.');
+  await guest.locator('[data-weapon="1"]').tap();
+  await host.waitForFunction(()=>window.__mario.engine.weapons.equipped[1]===1);
+  assert.equal(await guest.locator('[data-weapon="1"]').getAttribute('aria-pressed'),'true');
+  await host.evaluate(()=>{
+    const e=window.__mario.engine,index=25*16+5;
+    for(let p=0;p<2;p++){
+      const m=e.nes[p].cpu.mem;m[0x75]=0;m[0x90]=p?48:24;m[0x87]=1;m[0xa2]=128;
+      m[0xbd]=0;m[0xcf]=0;m[0xef]=0x40;m[0x552]=255;m[0x6000+index]=0x67;
+      e.refreshTile(p,index,0x67);
+    }
+    e.tiles[index]=0x67;e.grace=90;window.__mario.draw();
+  });
+  const b=await guest.locator('.button-b').boundingBox();
+  const touch=await guestContext.newCDPSession(guest);
+  await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:b.x+b.width/2,y:b.y+b.height/2,id:1}]});
+  await host.waitForFunction(()=>window.__mario.engine.weapons.stats.bricks>0,{},{timeout:5000});
+  await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await host.waitForFunction(()=>window.__mario.engine.masks[1]===0);
+  assert.deepEqual(await host.evaluate(()=>window.__mario.engine.nes.map(n=>n.cpu.mem[0x6000+25*16+5])),[0x80,0x80]);
+  await host.screenshot({path:'test-results/rocket-host.png'});await guest.screenshot({path:'test-results/rocket-guest.png'});
+  await guest.locator('[data-weapon="2"]').tap();await host.waitForFunction(()=>window.__mario.engine.weapons.equipped[1]===2);
+  await guest.locator('[data-weapon="3"]').tap();await host.waitForFunction(()=>window.__mario.engine.weapons.equipped[1]===3);
+  await guest.locator('[data-weapon="3"]').tap();await host.waitForFunction(()=>window.__mario.engine.weapons.equipped[1]===0);
+  assert.equal(await guest.locator('#b-caption').textContent(),'RUN');
+  console.log('PASS: online weapon toggles, touch firing, synchronized brick destruction, and putting weapons away');
   await host.evaluate(()=>{
     const e=window.__mario.engine;
     for(let i=0;i<500;i++){for(const n of e.nes)n.cpu.mem[0x552]=255;e.input(0,128+(i%60<40?1:0));e.step();}

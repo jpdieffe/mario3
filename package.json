@@ -8,7 +8,7 @@
     "probe": "node scripts/probe-runtime.mjs",
     "verify:rom": "python scripts/verify-rom.py",
     "start": "node scripts/serve.mjs",
-    "check": "node --check site/app.js && node --check site/engine.js && node --check site/room.js && node --check site/controls.js",
+    "check": "node --check site/app.js && node --check site/engine.js && node --check site/weapons.js && node --check site/room.js && node --check site/controls.js",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "node tests/browser.mjs"
   },

@@ -21,6 +21,17 @@ on the host device, load, regroup, and leave. The host must keep the tab visible
 Keyboard: arrows move, Z or Space jumps, X runs/holds, Enter starts/pauses, Shift
 selects. Touch controls and standard gamepads are supported.
 
+Optional weapon toggles sit below Select and Start. Each player can equip a
+**rocket launcher**, **sniper rifle**, or **assault rifle**; tap the same button
+again to put it away. Keyboard shortcuts are **1 / 2 / 3**. While equipped, hold
+**B / X** to fire and run. Up/down aims vertically; combine it with left/right to
+aim diagonally. Ammunition is unlimited, and each weapon has its own firing rate.
+Rockets explode and destroy ordinary bricks, ice blocks and giant breakable bricks.
+Sniper shots pierce ordinary enemies at long range; the assault rifle fires rapidly.
+Shots stop at terrain. Partners, power-ups, bosses and level mechanisms are protected.
+The host simulates all shots and terrain changes for both views, including solo
+play before a friend joins. Weapon selection and destroyed terrain survive saves.
+
 If a phone finds the room but cannot connect on the same Wi-Fi, check its browser's
 system permissions. On Android 17 or newer, open **Settings > Apps > Chrome (or
 your browser) > Permissions** and allow **Nearby devices / Local network**. Then
@@ -72,7 +83,10 @@ signaling. It tests real WebRTC media, remote input, separate cameras, suspended
 audio at host startup, audio recovery, landscape fit, room capacity, disconnect,
 and rejoin. Headless engine tests use the original ROM to exercise drop-in,
 collision, terrain/actor synchronization, cameras, death/respawn, alternate-room
-state, and saving/loading.
+state, and saving/loading. Weapon tests cover firing rates, shared brick removal,
+enemy hits, wall collisions, input validation, release/disconnect, and save/scene
+cleanup. The two-browser test also fires a rocket with a touch press from Luigi's
+client and verifies the brick is removed from both original-ROM simulations.
 
 The site is buildless. GitHub Actions runs checks/tests and deploys `site/`.
 `node scripts/build-start.mjs` regenerates the initial World 1 map save state

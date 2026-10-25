@@ -2,6 +2,7 @@ export const PROTOCOL = 1;
 export const BUTTON_COUNT = 8;
 export const ALL_BUTTONS = (1 << BUTTON_COUNT) - 1;
 export const ROOM_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const validWeapon = value => Number.isInteger(value) && value >= 0 && value <= 3;
 export function newRoomCode(excluded = new Set()) {
   const size = ROOM_ALPHABET.length;
   const start = crypto.getRandomValues(new Uint16Array(1))[0] % (size * size);
@@ -22,7 +23,8 @@ export function parseRoomCode(value) {
 }
 export function validInput(message) {
   return message?.type === 'input' && Number.isSafeInteger(message.seq) && message.seq >= 0 &&
-    Number.isInteger(message.mask) && message.mask >= 0 && message.mask <= ALL_BUTTONS;
+    Number.isInteger(message.mask) && message.mask >= 0 && message.mask <= ALL_BUTTONS &&
+    (message.weapon === undefined || validWeapon(message.weapon));
 }
 export function applyMask(previous, next, emit) {
   for (let button = 0; button < BUTTON_COUNT; button++) {

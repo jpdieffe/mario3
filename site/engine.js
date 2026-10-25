@@ -1,4 +1,5 @@
 import { M, OBJECT_FIELDS } from './memory.js';
+import { WeaponSystem } from './weapons.js';
 
 const signed = n => n > 127 ? n - 256 : n;
 const TILE_START = 0x6000, TILE_END = 0x7950;
@@ -77,6 +78,7 @@ export class CoopEngine {
     this.masks=[0,0]; this.joined=false; this.frame=0; this.grace=0;
     this.entities=new Map(); this.slotKeys=[Array(8).fill(null),Array(8).fill(null)];
     this.serial=0; this.deaths=[0,0]; this.paused=false; this.transition=null; this.stats={bounces:0,bumps:0,tileEdits:0};
+    this.weapons=new WeaponSystem(this);
   }
   input(p,mask) {
     // UI mask follows NES button order: A,B,Select,Start,Up,Down,Left,Right.
@@ -106,12 +108,13 @@ export class CoopEngine {
     if(inLevel(this.nes[0])) setPosition(this.nes[1],Math.max(p.cameraX+8,p.x-18),p.y);
     this.onEvent('Luigi joined');
   }
-  leave() { if(this.transition?.leader===1)this.copy(1,0,{keepSuit:true});this.transition=null;this.joined=false; this.input(1,0); this.entities.clear(); }
+  leave() { if(this.transition?.leader===1)this.copy(1,0,{keepSuit:true});this.transition=null;this.joined=false; this.input(1,0); this.entities.clear();this.weapons.leave(); }
   resetWorld() {
     this.key=sceneKey(this.nes[0]);
     this.tiles=Uint8Array.from(this.nes[0].cpu.mem.slice(TILE_START,TILE_END));
     this.entities.clear(); this.slotKeys=[Array(8).fill(null),Array(8).fill(null)];
     this.deaths=[0,0];
+    this.weapons.clear();
   }
   recolor(p) {
     if(p!==1 || !inLevel(this.nes[p])) return;
@@ -125,7 +128,11 @@ export class CoopEngine {
   step() {
     if(this.paused) return;
     this.frame++;
-    if(!this.joined) { this.applyInput(0); this.nes[0].frame(); return; }
+    if(!this.joined) {
+      this.applyInput(0);this.nes[0].frame();
+      if(inLevel(this.nes[0])&&(!this.tiles||sceneKey(this.nes[0])!==this.key))this.resetWorld();
+      this.weapons.step();return;
+    }
     if(this.transition){this.advanceTransition();return;}
     const a=this.nes[0], b=this.nes[1];
     if(!inLevel(a)) {
@@ -171,6 +178,7 @@ export class CoopEngine {
       if(hit==='bump') this.stats.bumps++;
       else if(hit) this.stats.bounces++;
     }
+    this.weapons.step();
   }
   advanceTransition() {
     const leader=this.transition.leader,n=this.nes[leader],m=n.cpu.mem;
@@ -282,10 +290,12 @@ export class CoopEngine {
     const previous=n.ppu.vramMem[n.ppu.vramMirrorTable[addr]];
     n.ppu.mirroredWrite(addr,(previous&~(3<<shift))|((value>>6)<<shift));
   }
-  snapshot() {return {version:1,rom:'smb3-us-rev1',state:this.nes[0].toJSON()};}
+  snapshot() {return {version:1,rom:'smb3-us-rev1',state:this.nes[0].toJSON(),weapons:[...this.weapons.equipped]};}
   restore(saved) {
     if(saved?.version!==1 || saved.rom!=='smb3-us-rev1')throw new Error('This save is for a different game version.');
     this.nes[0].fromJSON(saved.state); this.input(0,0); this.paused=false;this.transition=null;
+    this.weapons.clear();this.weapons.equip(0,saved.weapons?.[0]??0);
+    this.weapons.equip(1,saved.weapons?.[1]??0);
     if(this.joined)this.join();
   }
 }

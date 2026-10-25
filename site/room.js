@@ -1,4 +1,4 @@
-import { PROTOCOL, newRoomCode, validInput } from './protocol.js';
+import { PROTOCOL, newRoomCode, validInput, validWeapon } from './protocol.js';
 const PREFIX = 'mario3-together-v1-';
 const networkAdvice = () => /Android/i.test(globalThis.navigator?.userAgent || '')
   ? 'In Android Settings > Apps > your browser > Permissions, allow Nearby devices / Local network, then retry. See Help for other connection options.'
@@ -15,7 +15,7 @@ const messageFor = error => ({
 export class Room {
   constructor(events = {}, settings = {}) {
     this.events = events; this.settings = settings; this.mask = 0; this.seq = 0; this.lastSeq = -1;
-    this.remoteMask = 0; this.lastInput = 0; this.closed = false; this.isHost = false;
+    this.remoteMask = 0; this.lastInput = 0; this.closed = false; this.isHost = false;this.weapon=0;
   }
   emit(name, ...args) { this.events[name]?.(...args); }
   async open(host, code) {
@@ -61,7 +61,7 @@ export class Room {
     this.peer.on('close', () => { if (!this.closed) this.emit('error','The room closed. Create or join a new room.'); });
     if (!host) this.attach(this.peer.connect(PREFIX + code, {reliable:true,serialization:'json',metadata:{protocol:PROTOCOL}}));
     this.timer = setInterval(() => {
-      if (!this.isHost && this.accepted) this.send({type:'input',mask:document.hidden ? 0 : this.mask,seq:this.seq++});
+      if (!this.isHost && this.accepted) this.send({type:'input',mask:document.hidden ? 0 : this.mask,weapon:this.weapon,seq:this.seq++});
       if (this.isHost && this.remoteMask && performance.now() - this.lastInput > 600) { this.remoteMask = 0; this.emit('input',0); }
       if(this.accepted && this.lastHeard && performance.now()-this.lastHeard>12000) this.connection?.close();
     }, 50);
@@ -119,7 +119,7 @@ export class Room {
       }
       if (!this.accepted) return;
       if (this.isHost && validInput(data) && data.seq > this.lastSeq) {
-        this.lastSeq = data.seq; this.lastInput = performance.now(); this.remoteMask = data.mask; this.emit('input',data.mask);
+        this.lastSeq = data.seq; this.lastInput = performance.now(); this.remoteMask = data.mask; this.emit('input',data.mask,data.weapon??0);
       } else if (data.type === 'ping' && Number.isFinite(data.at)) this.send({type:'pong',at:data.at});
       else if (data.type === 'pong' && Number.isFinite(data.at)) this.emit('latency',Math.max(0,Date.now()-data.at));
       else if(this.isHost && data.type==='regroup' && performance.now()-(this.lastRegroup||0)>3000) {this.lastRegroup=performance.now();this.emit('regroup');}
@@ -146,7 +146,8 @@ export class Room {
     this.emit('error',text);
   }
   send(data) { if (this.connection?.open) { try { this.connection.send(data); } catch {} } }
-  setInput(mask) { this.mask = mask; if (this.accepted && !this.isHost) this.send({type:'input',mask,seq:this.seq++}); }
+  setInput(mask) { this.mask = mask; if (this.accepted && !this.isHost) this.send({type:'input',mask,weapon:this.weapon,seq:this.seq++}); }
+  setWeapon(id) {if(validWeapon(id)){this.weapon=id;this.setInput(this.mask);}}
   broadcast(text, phase) { this.send({type:'state',text,phase}); }
   stream(media) {
     if (!this.isHost || !this.accepted || !this.connection?.open) return;

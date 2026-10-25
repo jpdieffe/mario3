@@ -4,10 +4,11 @@ import { GameAudio } from './audio.js';
 import { Room } from './room.js';
 import { parseRoomCode } from './protocol.js';
 import { setupControls } from './controls.js';
+import { WEAPONS } from './weapons.js';
 
 const $=id=>document.getElementById(id);
 let engine,room,audio,guestAudio,media,role,loop,previous=0,accumulator=0,busy=false;
-let toastTimer,wakeLock;
+let toastTimer,wakeLock,selectedWeapon=0;
 const canvases=[$('game'),$('guest-canvas')];
 const contexts=canvases.map(c=>c.getContext('2d',{alpha:false}));
 const images=contexts.map(c=>c.createImageData(256,240));
@@ -17,12 +18,22 @@ const controls=setupControls(mask=>{if(role==='host')engine?.input(0,mask);else 
 
 function status(text,persistent=false){$('status').textContent=text;clearTimeout(toastTimer);if(!persistent)toastTimer=setTimeout(()=>$('status').textContent='',6500);}
 function message(text){$('screen-message').hidden=!text;$('screen-message').textContent=text;}
+function selectWeapon(id,announce=true){
+  selectedWeapon=id;
+  document.querySelectorAll('[data-weapon]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.weapon)===id)));
+  $('weapon-hint').textContent=id?'B fires · ↑ / ↓ aim':'Tap to equip · tap again to put away';
+  $('b-caption').textContent=id?'RUN / FIRE':'RUN';
+  document.querySelector('.button-b').setAttribute('aria-label',id?'B fire weapon and run':'B run or hold');
+  if(role==='host')engine?.weapons.equip(0,id);else room?.setWeapon(id);
+  if(announce)status(id?`${WEAPONS[id].name} equipped. Hold B / X to fire.`:'Weapon put away.');
+}
 function showGame(host){
   role=host?'host':'guest';$('lobby').hidden=true;$('play').hidden=false;document.body.classList.add('playing');
   $('game').hidden=!host;$('remote-video').hidden=host;
   $('player-label').textContent=host?'MARIO':'LUIGI';$('partner-label').textContent=host?'Waiting for Luigi':'Connecting to Mario';
   $('save-button').disabled=!host;$('load-button').disabled=!host;
   $('retry-button').hidden=true;
+  selectWeapon(0,false);
   controls.enable(true);message(host?'Loading the original game…':'Connecting to your friend…');
   navigator.wakeLock?.request('screen').then(lock=>wakeLock=lock).catch(()=>{});
 }
@@ -31,6 +42,7 @@ function draw(){
     if(p===1&&!engine.joined)pixels[p].set(engine.frames[0]);else composite(engine,p,pixels[p]);
     for(let i=0;i<pixels[p].length;i++)outputs[p][i]=pixels[p][i]|0xff000000;
     contexts[p].putImageData(images[p],0,0);
+    if(p===0||engine.joined)engine.weapons.draw(contexts[p],p);
   }
 }
 function tick(now){
@@ -63,7 +75,7 @@ function makeRoom(){
       video.onloadeddata=()=>{message('');$('sound-button').textContent='Sound on';};
       video.play().then(()=>message('')).catch(()=>message('Tap Sound on to start your view.'));
     },
-    input(mask){engine?.input(1,mask);},
+    input(mask,weapon){engine?.input(1,mask);if(weapon!==undefined)engine?.weapons.equip(1,weapon);},
     regroup,
     status(text){status(text);if(role==='guest'&&!$('remote-video').videoWidth)message(text);},
     latency(ms){$('connection-label').textContent=`P2P · ${Math.round(ms)} MS`;},
@@ -90,6 +102,7 @@ async function host(){
       if(p===0){audio?.push(l,r);if(!engine?.joined||!inLevel(engine.nes[0])||engine.transition?.leader===0)guestAudio?.push(l,r);}
       else{guestAudio?.push(l,r);if(engine?.transition?.leader===1)audio?.push(l,r);}
     },onEvent:text=>status(text)});
+    engine.weapons.equip(0,selectedWeapon);
     engine.nes[0].fromJSON(state);engine.nes[0].frame();draw();message('');
     previous=0;accumulator=0;loop=requestAnimationFrame(tick);
     room=makeRoom();const code=await room.open(true);
@@ -103,7 +116,7 @@ async function join(event){
   const code=parseRoomCode($('room-input').value);
   if(!code){status('Enter the two-character room code, such as AB.');$('room-input').focus();return;}
   busy=true;showGame(false);$('room-label').textContent=code;
-  try{room=makeRoom();await room.open(false,code);location.hash=`room=${code}`;}
+  try{room=makeRoom();room.setWeapon(selectedWeapon);await room.open(false,code);location.hash=`room=${code}`;}
   catch(error){status(error.message,true);message(error.message);$('retry-button').hidden=false;}
   finally{busy=false;}
 }
@@ -118,6 +131,14 @@ function leave(clearStatus=true){
 }
 $('host-button').addEventListener('click',host);
 $('join-form').addEventListener('submit',join);
+document.querySelectorAll('[data-weapon]').forEach(button=>button.addEventListener('click',()=>{
+  if(!role)return;const id=Number(button.dataset.weapon);selectWeapon(selectedWeapon===id?0:id);
+}));
+window.addEventListener('keydown',event=>{
+  if(!role||event.repeat||document.querySelector('dialog[open]')||/INPUT|TEXTAREA|SELECT/.test(event.target.tagName))return;
+  const id={Digit1:1,Digit2:2,Digit3:3}[event.code];
+  if(id){event.preventDefault();selectWeapon(selectedWeapon===id?0:id);}
+});
 $('retry-button').addEventListener('click',()=>{const code=room?.code;leave(false);if(code){$('room-input').value=code;join();}});
 $('leave-button').addEventListener('click',()=>leave());
 $('copy-room').addEventListener('click',async()=>{
@@ -145,7 +166,7 @@ $('save-button').addEventListener('click',()=>{
   if(!engine)return;try{localStorage.setItem('mario3-save',JSON.stringify(engine.snapshot()));status('Progress saved on this device.');$('menu').close();}catch{status('This browser could not store the save. Check available storage.');}
 });
 $('load-button').addEventListener('click',()=>{
-  if(!engine)return;try{const data=localStorage.getItem('mario3-save');if(!data)throw new Error('No saved progress on this device yet.');engine.restore(JSON.parse(data));$('menu').close();status('Progress restored.');}catch(error){status(error.message);}
+  if(!engine)return;try{const data=localStorage.getItem('mario3-save');if(!data)throw new Error('No saved progress on this device yet.');engine.restore(JSON.parse(data));selectWeapon(engine.weapons.equipped[0],false);$('menu').close();status('Progress restored.');}catch(error){status(error.message);}
 });
 $('regroup-button').addEventListener('click',()=>{if(role==='host')regroup();else {room?.send({type:'regroup'});status('Asked Mario to regroup.');}$('menu').close();});
 $('network-save').addEventListener('click',()=>{
