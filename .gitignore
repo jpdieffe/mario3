@@ -7,3 +7,5 @@ __pycache__/
 *.zip
 *.fns
 *.lst
+!site/roms/mario3.nes
+test-results/

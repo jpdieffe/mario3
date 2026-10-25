@@ -1,5 +1,8 @@
 # Original-ROM co-op investigation
 
+> Historical investigation before implementation. The playable runtime co-op
+> build and its current limitations are documented in [README](../README.md).
+
 Investigated 2026-10-25. Preserve the complete original game as the starting point;
 a browser-native recreation limited to World 1 was declined.
 

@@ -1,64 +1,73 @@
-# Mario 3 online co-op — original-ROM investigation
+# Mario 3 Together
 
-Target: the complete Super Mario Bros. 3 ROM, with a second player joining as
-Luigi inside Mario's current level, player-to-player bumps and head bounces,
-independent cameras, two-character room codes, and landscape phone controls.
+[Play on GitHub Pages](https://jpdieffe.github.io/mario3/)
 
-**Status: research baseline only. There is no playable co-op build or Pages game
-yet.** The original ROM has been rebuilt byte-for-byte and exercised in a
-JavaScript emulator. Simultaneous Luigi and independent views are not implemented.
+An experimental online co-op layer for the complete original Super Mario Bros. 3
+USA Revision 1 ROM. Mario hosts; a friend joins as Luigi using a two-character
+room code. Both characters run the original game physics, can bump and bounce on
+each other, and have independent cameras.
 
-The [investigation](docs/feasibility.md) records what is verified, what needs engine
-changes, and the experiments required before promising full-game compatibility.
+## Play
 
-## Reproduce the baseline
+1. Open the site and choose **Create a room**.
+2. Share the two-character code or copy the invitation at the top of the game.
+3. Your friend chooses **Join**. They appear beside Mario in the current level.
+4. Turn phones sideways. Tap **Sound on** if audio is blocked by the browser.
 
-Requires Git, Python 3, Node.js, and npm. The commands below use PowerShell and the
-Windows NESASM executable supplied by the pinned Southbird disassembly. On other
-platforms, build a compatible [NESASM](https://github.com/camsaul/nesasm) first.
+The host controls the world map. Pipes and level exits take both players together.
+A defeated player respawns beside a living partner. **Menu** includes saves stored
+on the host device, load, regroup, and leave. The host must keep the tab visible.
 
-```powershell
-npm ci --ignore-scripts
-git clone https://github.com/captainsouthbird/smb3.git .research/smb3
-git -C .research/smb3 checkout --detach 09b1bd81a788de8ceec664a34094e84ddb463117
-Push-Location .research/smb3
-.\nesasm.exe smb3.asm
-Pop-Location
-npm run verify:rom -- "../Super Mario Bros. 3.zip" .research/smb3/smb3.nes --output artifacts/rom-verification.json
-npm run probe
+Keyboard: arrows move, Z or Space jumps, X runs/holds, Enter starts/pauses, Shift
+selects. Touch controls and standard gamepads are supported.
+
+## Implementation and limits
+
+The supplied ROM is preserved in full. A runtime patch coordinates two original
+NES simulation contexts on the host, sharing terrain changes and regular actor
+state. Each context provides its own camera and player simulation. A compositing
+pass draws the partner using the original CHR graphics in world coordinates.
+Player collisions update the actual emulated positions and velocities.
+
+PeerJS/WebRTC carries Luigi's controls to the host and Luigi's own rendered video
+and audio back. The host sees Mario's view. This is a direct peer connection when
+network conditions allow it; PeerJS signaling is external to GitHub Pages. Optional
+TURN settings are available in Help for networks that cannot connect directly.
+
+**Co-op remains experimental.** The complete ROM is present, but every world,
+boss, special projectile and scripted room has not been validated in co-op.
+Special objects outside the regular actor pool can diverge between contexts;
+regroup can recover some cases. The two players share room transitions, so they
+cannot stay in different pipe subrooms simultaneously. Save before difficult
+stages. This is not a standalone hardware-compatible NES patch.
+
+Desktop Chrome and two connected Chrome clients using phone-sized/touch contexts
+were tested. Physical Android devices and iOS Safari have not been tested in this
+environment. A slower host may reduce game speed because it runs both contexts.
+
+## Development
+
+```sh
+npm ci
+npm start
+npm run check
+npm test
+npm run test:browser
 ```
 
-Substitute your ROM path in the verification command. Both a `.nes` and a ZIP
-containing one `.nes` are accepted. `npm run probe -- path/to/verified.nes` accepts
-an alternative ROM location. A wrong revision or nonidentical rebuild causes
-verification to fail. The probe also checks the ROM hash before running.
+The browser test requires installed Google Chrome and internet access to PeerJS
+signaling. It tests real WebRTC media, remote input, separate cameras, suspended
+audio at host startup, audio recovery, landscape fit, room capacity, disconnect,
+and rejoin. Headless engine tests use the original ROM to exercise drop-in,
+collision, terrain/actor synchronization, cameras, death/respawn, alternate-room
+state, and saving/loading.
 
-The tested ROM is USA Revision 1, 393,232 bytes, SHA-256:
+The site is buildless. GitHub Actions runs checks/tests and deploys `site/`.
+`node scripts/build-start.mjs` regenerates the initial World 1 map save state
+through normal controller input. The runtime uses the vendored emulator source,
+including the small patches documented in [THIRD_PARTY.md](THIRD_PARTY.md).
 
-```text
-4377a7f5e6eb50bdd2ac6f249bf1a7085500aca8eb41f38545c3a2731c51a579
-```
-
-The supplied assembler used for the local rebuild has SHA-256:
-
-```text
-d6c16c39e1ffe4b46896726c738b5a8654e9dac3389e4439597582e1b97f4501
-```
-
-`artifacts/` holds generated reports. Research checkouts, ROMs, emulator snapshots,
-and screenshots stay local and are ignored by Git. The tracked
-[verification results](docs/verification.json) contain hashes and measurements only.
-
-## What the runtime probe verifies
-
-It reaches World 1-1 through normal controls, saves a snapshot, and runs three
-30-frame branches: idle, controller two holding right+jump, and controller one
-holding right+jump. It confirms repeatable snapshot replay and that controller two
-is read without changing the measured player/object state. Controller one moves
-Mario and makes him jump. This is a stock-ROM control experiment, not a test of
-completed co-op or all levels.
-
-Credits: [Southbird's SMB3 disassembly](https://github.com/captainsouthbird/smb3)
-([original project](http://www.sonicepoch.com/sm3mix/)),
-[ErikHK's simultaneous-play experiment](https://github.com/ErikHK/smb32p), and
-[JSNES](https://github.com/bfirsh/jsnes), Apache-2.0.
+[Initial ROM investigation](docs/feasibility.md) and
+[baseline verification](docs/verification.json) are retained as historical records.
+The verified ROM SHA-256 is
+`4377a7f5e6eb50bdd2ac6f249bf1a7085500aca8eb41f38545c3a2731c51a579`.

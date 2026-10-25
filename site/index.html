@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#193e34"><meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Mario 3 · Together</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="vendor/peerjs.min.js"></script><script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="./"><span class="brand-icon">3</span> MARIO <span class="brand-light">TOGETHER</span></a><button id="help-button" class="quiet">How to play <span>↗</span></button></header>
+  <main>
+    <section id="lobby" class="lobby">
+      <div class="intro"><div class="eyebrow"><span class="dot"></span> TWO PLAYERS. ONE ADVENTURE.</div>
+        <h1>A little brother.<br>A bigger <em>adventure.</em></h1>
+        <p>The original Super Mario Bros. 3, with Mario and Luigi in the level together. Your own view. A friend one room code away.</p>
+        <div class="feature-line"><span>↔ Independent cameras</span><span>⌁ Direct connection</span><span>◉ Phone controls</span></div>
+      </div>
+      <div class="room-card"><div class="card-top"><span>PLAYER SELECT</span><span>01 / 02</span></div>
+        <div class="brothers"><div class="brother mario"><span>M</span><small>YOU HOST</small></div><div class="plus">+</div><div class="brother luigi"><span>L</span><small>THEY JOIN</small></div></div>
+        <button id="host-button" class="primary">Create a room <span>→</span></button>
+        <div class="divider"><span>or join your friend</span></div>
+        <form id="join-form"><label for="room-input">ROOM CODE</label><div class="join-row"><input id="room-input" autocomplete="off" autocapitalize="characters" maxlength="2" spellcheck="false" placeholder="AB" aria-label="Two-character room code"><button id="join-button" type="submit">Join <span>↗</span></button></div></form>
+        <p class="card-note">No account needed. Keep the host’s tab open.</p>
+      </div>
+      <footer class="lobby-footer"><span>THE WHOLE ORIGINAL ADVENTURE</span><span>Landscape looks best. Turn your phone sideways. ↻</span></footer>
+    </section>
+    <section id="play" class="play" hidden>
+      <div class="gamebar"><div class="player-tag"><span class="dot"></span><strong id="player-label">MARIO</strong><span id="partner-label">Waiting for Luigi</span></div><button id="copy-room" class="room-pill" title="Copy invitation"><small>ROOM</small> <b id="room-label">··</b><span>⧉</span></button><div class="game-actions"><button id="sound-button" title="Enable game sound">Sound on</button><button id="fullscreen-button" title="Full screen">⛶</button><button id="menu-button">Menu</button></div></div>
+      <div class="console">
+        <div class="left-controls"><div id="dpad" class="dpad" aria-label="Directional pad"><span class="up">▲</span><span class="left">◀</span><span class="middle"></span><span class="right">▶</span><span class="down">▼</span></div><span class="control-caption">MOVE</span></div>
+        <div class="screen-frame"><div class="screen"><canvas id="game" width="256" height="240" aria-label="Mario game view"></canvas><video id="remote-video" autoplay muted playsinline hidden aria-label="Luigi game view"></video><div id="screen-message" class="screen-message" hidden>Connecting…</div></div><div class="screen-edge"><span>SUPER MARIO BROS. 3</span><span id="connection-label">LOCAL</span></div></div>
+        <div class="right-controls"><div class="ab"><button data-button="1" class="button-b" aria-label="B run or hold">B</button><button data-button="0" class="button-a" aria-label="A jump">A</button></div><span class="control-caption">RUN <span>JUMP</span></span><div class="small-controls"><button data-button="2">SELECT</button><button data-button="3">START</button></div></div>
+      </div>
+      <div class="game-footer"><span id="game-hint">Arrows move · Z / Space jump · X run · Enter start</span><span>Jump on a friend. Find your own way.</span></div>
+      <div class="rotate-hint">↻ Turn your phone sideways for a bigger view.</div>
+    </section>
+    <div id="status" role="status" aria-live="polite"></div>
+  </main>
+  <dialog id="menu"><div class="dialog-heading"><h2>Your adventure</h2><button data-close="menu" aria-label="Close menu">✕</button></div><p id="menu-note">The world map is controlled by the host. Pipes and level exits bring both players together.</p><div class="menu-grid"><button id="save-button">Save progress</button><button id="load-button">Load progress</button><button id="regroup-button">Regroup players</button><button id="leave-button">Leave room</button></div></dialog>
+  <dialog id="help"><div class="dialog-heading"><h2>Better together.</h2><button data-close="help" aria-label="Close help">✕</button></div><p>One person creates a room and shares its two-letter or number code. The friend joins as Luigi, right where Mario is playing.</p><p>Use the touch buttons, a gamepad, or your keyboard: <strong>arrows</strong> to move, <strong>Z / Space</strong> to jump, <strong>X</strong> to run and hold, <strong>Enter</strong> to start or pause.</p><p>Each player has their own camera. Jump on each other for a boost. If a player dies, they reappear beside their partner. The host chooses levels on the map; entering a pipe or finishing a level takes both players along.</p><p class="help-note">This original-ROM co-op patch is experimental. Some special enemies and scripted rooms may need Regroup from the menu. Save progress before attempting a difficult level. The host must keep the game visible; backgrounding a phone pauses its browser.</p><details><summary>Connection settings</summary><p>Normally these can stay blank. A TURN relay can help if your networks block direct connections.</p><label>TURN URL<input id="turn-url" placeholder="turn:your-server:3478"></label><label>Username<input id="turn-user" autocomplete="off"></label><label>Password<input id="turn-password" type="password" autocomplete="off"></label><button id="network-save">Save for the next room</button></details><p class="credits">Original game © Nintendo. Co-op implementation is unofficial. <a href="https://github.com/jpdieffe/mario3">Source & credits ↗</a></p></dialog>
+  <canvas id="guest-canvas" width="256" height="240" hidden></canvas>
+</body></html>

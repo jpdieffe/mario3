@@ -1,14 +1,19 @@
 {
-  "name": "mario3-coop-research",
-  "version": "0.1.0",
+  "name": "mario3-together",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "Original-ROM SMB3 co-op feasibility experiments; not a playable co-op release",
+  "description": "Original-ROM SMB3 online co-op with independent views",
   "scripts": {
     "probe": "node scripts/probe-runtime.mjs",
-    "verify:rom": "python scripts/verify-rom.py"
+    "verify:rom": "python scripts/verify-rom.py",
+    "start": "node scripts/serve.mjs",
+    "check": "node --check site/app.js && node --check site/engine.js && node --check site/room.js && node --check site/controls.js",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs"
   },
   "devDependencies": {
-    "jsnes": "2.1.0"
+    "jsnes": "2.1.0",
+    "@playwright/test": "1.56.1"
   }
 }
